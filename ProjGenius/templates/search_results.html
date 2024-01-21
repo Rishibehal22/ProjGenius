@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            color: #343a40;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            text-align: center;
+            color: #ec8f5e;
+            margin-top: 20px;
+        }
+
+        .result {
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            margin: 20px auto 40px; /* Added margin-bottom for more space */
+            padding: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease-in-out;
+            width: 80%;
+            max-width: 800px;
+            /* position: relative; */
+            position: sticky;
+        }
+
+        .result:hover {
+            transform: scale(1.02);
+        }
+
+        h2 {
+            color: #ec8f5e;
+            margin-bottom: 15px;
+        }
+
+        h3 {
+            color: #6c757d;
+            margin-top: 15px;
+        }
+
+        p {
+            color: #343a40;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        a {
+            display: inline-block;
+            margin-top: 10px; /* Adjusted margin-top */
+            margin-bottom: 20px; /* Added margin-bottom */
+            padding: 12px 24px;
+            text-align: center;
+            color: #fff;
+            text-decoration: none;
+            background-color: #ec8f5e;
+            border-radius: 5px;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        a:hover {
+            background-color: #0056b3;
+        }
+
+        /* Feedback Modal */
+        .feedback-modal {
+            display: flex;
+            margin-left: 7rem;
+            position: relative;
+            background-color: #fff;
+            /* border: 1px solid #fff; */
+            border-radius: 8px;
+            padding: 20px;
+            /* box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); */
+            width: 80%;
+            max-width: 500px;
+            margin-bottom: -2.5%;
+            margin-top: -2.5%;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+        }
+
+        .modal-icons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            margin-left: 1rem;
+            padding: 0rem;
+        }
+
+        .modal-icons i {
+            font-size: 30px;
+            cursor: pointer;
+            transition: color 0.3s ease-in-out;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        .modal-icons i:hover {
+            color: green; /* Change to your desired hover color */
+        }
+        .modal-icons i.thumbs-down:hover {
+            color: red; /* Change to your desired hover color for thumbs-down */
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Search Results</h1>
+
+    <!-- Loop through matching_rows and display the results -->
+    {% for result in matching_rows %}
+    <div class="result">
+        <h2>{{ result['PROJECT ID'] }} - {{ result['NAME'] }}</h2>
+        <h3>Description:</h3>
+        <p>{{ result['DESCRIPTION']|safe }}</p>
+        <h3>Technology:</h3>
+        <p>{{ result['TECHNOLOGY'] }}</p>
+
+        <!-- Add a link or button for feedback (modify the href as needed) -->
+        <!-- <a href="#" onclick="toggleFeedbackModal('{{ result['PROJECT ID'] }}')">Provide Feedback</a> -->
+
+        <!-- Feedback Modal -->
+        <div class="feedback-modal" id="feedbackModal-{{ result['PROJECT ID'] }}">
+            <p>How was this result?</p>
+            <div class="modal-icons">
+                <i class="fas fa-thumbs-up" onclick="submitFeedback('{{ result['PROJECT ID'] }}', 'up')"></i>
+                <i class="fas fa-thumbs-down thumbs-down" onclick="submitFeedback('{{ result['PROJECT ID'] }}', 'up')" ></i>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Add a link back to the home page or any other desired navigation -->
+    <a href="/">Back to Home</a>
+
+    <script>
+
+        let likes = 0;
+        let dislikes = 0;
+        function updateCounter(action) {
+            if (action === 'like') {
+                likes++;
+            } else if (action === 'dislike') {
+                dislikes++;
+            }
+        
+            updateCounts();
+        }
+
+        function updateCounts() {
+            document.getElementById('likeCount').innerText = likes;
+            document.getElementById('dislikeCount').innerText = dislikes;
+        }
+
+        function toggleFeedbackModal(projectId) {
+            var modal = document.getElementById('feedbackModal-' + projectId);
+            modal.style.display = (modal.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function submitFeedback(projectId, feedback) {
+            // Handle feedback submission, e.g., send to server
+            console.log('Feedback submitted for Project ID ' + projectId + ': ' + feedback);
+            
+            // Send an AJAX request to update Q-values
+            updateQValues(projectId, feedback);
+        }
+
+        function updateQValues(projectId, feedback) {
+            // Send an AJAX request to the server to update Q-values
+            // Example AJAX request using Fetch API
+            fetch('/update_q_values', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    project_id: projectId,
+                    feedback: feedback,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Q-values updated successfully');
+                } else {
+                    console.error('Failed to update Q-values');
+                }
+            })
+            .catch(error => {
+                console.error('Error during Q-values update:', error);
+            });
+        }
+    </script>
+</body>
+
+</html>
